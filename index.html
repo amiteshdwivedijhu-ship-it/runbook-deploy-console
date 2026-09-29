@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Runbook · Deploy console</title>
+<style>
+  :root {
+    --teal-900:#0a2e2b;
+    --teal-800:#0e3a33;
+    --teal-700:#12634f;
+    --teal-600:#147d73;
+    --teal-500:#1b9689;
+    --canvas:#f5f7f6;
+    --surface:#ffffff;
+    --line:#e3e8e5;
+    --ink:#17252b;
+    --muted:#5d6b73;
+    --faint:#89939a;
+    --green:#1f7a4d;
+    --green-bg:#e5f3ea;
+    --amber:#b45309;
+    --amber-bg:#fdf0e1;
+    --red:#b3261e;
+    --red-bg:#fdeceb;
+    --blue:#2364a0;
+    --blue-bg:#e8f0f9;
+    --shadow:0 1px 3px rgba(20,40,40,.08), 0 8px 22px rgba(20,40,40,.09);
+    --radius:12px;
+    --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif:Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--canvas); color:var(--ink); }
+  body { font-family:var(--sans); font-size:15px; line-height:1.45; }
+
+  /* ---------- header ---------- */
+  .topbar {
+    background:linear-gradient(135deg, var(--teal-900) 0%, var(--teal-800) 70%, #0c3a3e 100%);
+    color:#fff; padding:14px 22px; display:flex; align-items:center; gap:14px;
+    border-bottom:1px solid var(--teal-700);
+  }
+  .wordmark { font-family:var(--serif); font-size:22px; letter-spacing:.2px; font-weight:600; color:#fff; }
+  .brandicon {
+    display:inline-block; width:26px; height:26px; vertical-align:-6px; margin-right:8px;
+  }
+  .tagline { font-size:12.5px; color:#c9d6d2; margin-left:4px; font-weight:400; }
+  .topbar .demo {
+    background:rgba(255,255,255,.12); color:#e7ece9; border:1px solid rgba(255,255,255,.22);
+    border-radius:999px; padding:3px 10px; font-size:11.5px; font-weight:600; letter-spacing:.3px;
+  }
+  .topnav {
+    margin-left:auto; display:flex; gap:4px; color:#cfd9d6; font-size:13px; font-weight:500;
+  }
+  .topnav a { color:#cfd9d6; text-decoration:none; padding:6px 12px; border-radius:8px; }
+  .topnav a:hover { background:rgba(255,255,255,.1); }
+  .topnav a[aria-current] { background:rgba(255,255,255,.14); color:#fff; }
+
+  .wrap { max-width:1280px; margin:0 auto; padding:26px 24px 40px; display:flex; flex-direction:column; gap:22px; }
+
+  /* ---------- context strip ---------- */
+  .context {
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:16px 20px;
+    display:flex; flex-wrap:wrap; gap:18px; align-items:center;
+  }
+  .context .site { flex:0 0 auto; min-width:220px; }
+  .context .site .k { font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; }
+  .context .site .v { font-size:16px; font-weight:700; color:var(--ink); margin-top:2px; }
+  .context .site .s { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .context .job { flex:1 1 320px; }
+  .context .job .k { font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; }
+  .context .job .v { font-size:15.5px; font-weight:700; margin-top:2px; }
+  .context .job .s { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .context .agentbox { flex:0 0 auto; text-align:left; }
+  .agentbox .k { font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; }
+  .agentbox .agentname { font-size:15px; font-weight:700; margin-top:2px; }
+  .context .dash { width:1px; align-self:stretch; background:var(--line); }
+  .dividerv { width:1px; align-self:stretch; min-height:52px; background:var(--line); }
+
+  .pill {
+    display:inline-flex; align-items:center; gap:5px; border-radius:999px;
+    padding:3px 11px; font-size:12px; font-weight:700; letter-spacing:.2px;
+  }
+  .pill::before { content:""; width:7px; height:7px; border-radius:999px; background:currentColor; }
+  .pill.active { background:rgba(27,150,137,.14); color:var(--teal-600); }
+  .pill.complete,.pill.closed { background:var(--green-bg); color:var(--green); }
+  .pill.needs-review { background:var(--amber-bg); color:var(--amber); }
+  .pill.exception { background:var(--red-bg); color:var(--red); }
+  .pill.running { background:rgba(27,150,137,.14); color:var(--teal-600); }
+
+  .chip {
+    display:inline-flex; align-items:center; border-radius:6px; padding:1px 8px;
+    font-size:11px; font-weight:700; letter-spacing:.2px; height:20px;
+  }
+  .chip.outlook { background:var(--blue-bg); color:var(--blue); }
+  .chip.tms { background:rgba(27,150,137,.13); color:var(--teal-600); }
+  .chip.call { background:#eceff2; color:#4b5563; }
+  .chip.email { background:var(--blue-bg); color:var(--blue); }
+  .chip.erp { background:rgba(27,150,137,.13); color:var(--teal-600); }
+  .chip.thought { background:#eef1f4; color:#56626e; }
+  .chip.agent { background:#eef1f4; color:#56626e; }
+
+  /* ---------- main grid ---------- */
+  .main { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(290px,1fr); gap:20px; align-items:start; }
+
+  .card {
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  .card h3 {
+    margin:0; font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px;
+  }
+  .cardhead { display:flex; align-items:center; gap:8px; padding:13px 16px; }
+  .cardhead .right { margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .cardhead .sub { color:var(--faint); font-size:12px; }
+
+  /* ---------- timeline ---------- */
+  .steps { padding:14px 16px 16px; }
+  .steprow { display:flex; gap:14px; padding:11px 6px; border-radius:9px; position:relative; }
+  .steprow.pending { opacity:.62; }
+  .steprow.exception-step { background:rgba(179,38,30,.05); }
+  .rail { width:26px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center; }
+  .rail .node {
+    width:22px; height:22px; border-radius:999px; border:2px solid var(--line);
+    background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--faint);
+  }
+  .rail .node.done { background:var(--green-bg); border-color:var(--green); color:var(--green); }
+  .rail .node.running {
+    background:var(--teal-600); border-color:var(--teal-600); color:#fff;
+  }
+  .rail .node.running::after { content:""; position:absolute; inset:-6px; border:2px solid rgba(27,150,137,.45); border-radius:999px; animation:ping 1s ease-out infinite; }
+  @keyframes ping { 0%{opacity:1; transform:scale(.6);} 100%{opacity:0; transform:scale(1.15);} }
+  .rail .node.exception { background:var(--red-bg); border-color:var(--red); color:var(--red); }
+  .rail .stick { height:14px; margin-top:4px; width:2px; background:var(--line); border-radius:1px; }
+  .rail .stick.done { background:var(--green); }
+  .rail .stick.running { background:var(--teal-600); }
+
+  .stepbody { flex:1 1 auto; min-width:0; }
+  .stepbody .t { font-size:14.5px; font-weight:650; color:var(--ink); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .stepbody .t .time { color:var(--faint); font-size:12px; font-family:var(--mono); }
+  .stepbody .d { font-size:13px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .stepbody .meta { display:flex; gap:8px; align-items:center; margin-top:5px; flex-wrap:wrap; }
+  .stepbody .meta .audit {
+    font-size:11px; color:var(--faint); display:inline-flex; align-items:center; gap:4px;
+  }
+  .stepbody .meta .audit svg { width:11px; height:11px; }
+  .stepbody .meta .override-tag {
+    background:var(--blue-bg); color:var(--blue); font-size:11px; font-weight:700;
+    border-radius:6px; padding:1px 7px; display:inline-flex; align-items:center; gap:4px;
+  }
+  .stepbody .dx { font-size:12px; color:var(--red); margin-top:4px; font-weight:600; display:none; }
+  .steprow.exception-step .dx { display:block; }
+  .steprow .thought-detail { font-family:var(--mono); font-size:12.5px; color:#3d4a55; background:#f2f4f6; border-radius:7px; padding:6px 10px; margin-top:4px; display:inline-block; }
+
+  .runbookhead .controls {
+    display:flex; gap:4px; background:var(--canvas); border:1px solid var(--line); border-radius:8px; padding:2px;
+  }
+  button.ctl {
+    border:none; background:transparent; font-family:var(--sans); font-size:12px; font-weight:600;
+    color:var(--muted); padding:5px 11px; border-radius:6px; cursor:pointer;
+  }
+  button.ctl:hover { background:rgba(23,37,43,.07); }
+  button.ctl:disabled { color:var(--faint); cursor:default; }
+
+  /* ---------- right rail ---------- */
+  .live-body { padding:13px 16px; }
+  .live-body .now { font-size:13.5px; font-weight:650; color:var(--ink); }
+  .live-body .nowsub { font-size:12.5px; color:var(--muted); margin-top:3px; }
+  .progressbar { height:7px; border-radius:999px; background:var(--line); margin-top:11px; overflow:hidden; }
+  .progressbar > div { height:100%; background:var(--teal-600); border-radius:999px; transition:width .4s ease; }
+  .progtext { font-size:11.5px; color:var(--faint); margin-top:6px; }
+
+  .exception-banner {
+    border:1px solid #eecac8; background:linear-gradient(180deg,#fff, var(--red-bg));
+    border-radius:var(--radius); display:flex; gap:10px; padding:13px 15px; box-shadow:var(--shadow);
+  }
+  .exception-banner .ic { flex:0 0 auto; color:var(--red); display:flex; align-items:center; }
+  .exception-banner .bdy { flex:1; }
+  .exception-banner .h { font-size:14px; color:var(--red); font-weight:800; }
+  .exception-banner .why { font-size:13px; color:#6d1f1b; margin-top:3px; }
+  .exception-banner .who { font-size:12px; color:var(--muted); margin-top:3px; }
+
+  .takeover {
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:0;
+  }
+  .takeover .head { display:flex; align-items:center; gap:8px; padding:12px 15px; border-bottom:1px solid var(--line); }
+  .takeover .head h3 { font-size:14px; font-weight:800; display:flex; gap:8px; align-items:center; color:#7c2d1e; }
+  .takeover .head .pill { font-size:11.5px; }
+  .takeover .body { padding:13px 15px; }
+  .takeover .body .intro { font-size:13px; color:var(--muted); }
+  .takeover .field { margin-top:12px; }
+  .takeover label.flabel { display:block; font-size:11.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; }
+  .takeover select, .takeover textarea {
+    width:100%; font-family:var(--sans); font-size:13px; color:var(--ink);
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:var(--surface);
+  }
+  .takeover select:focus, .takeover textarea:focus { outline:none; border-color:var(--teal-500); box-shadow:0 0 0 3px rgba(27,150,137,.18); }
+  .takeover .hint { font-size:11.5px; color:var(--faint); margin-top:5px; }
+  .takeover .actions { display:flex; gap:9px; margin-top:14px; align-items:center; }
+  .reviewsnippet { margin-top:13px; font-size:12.5px; color:var(--muted); display:flex; gap:8px; }
+  .reviewsnippet b { color:var(--ink); font-weight:700; }
+
+  .btn-primary {
+    background:var(--teal-600); color:#fff; border:none; border-radius:9px; padding:10px 18px;
+    font-family:var(--sans); font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 1px 3px rgba(20,80,70,.35);
+  }
+  .btn-primary:hover { background:var(--teal-700); }
+  .btn-primary:disabled { background:#a5bfbc; color:#fff; cursor:not-allowed; }
+  .btn-ghost {
+    background:var(--surface); color:var(--teal-700); border:1px solid var(--teal-500);
+    border-radius:9px; padding:9px 15px; font-family:var(--sans); font-size:13.5px; font-weight:650; cursor:pointer;
+  }
+  .btn-ghost:hover { background:rgba(27,150,137,.07); }
+
+  .reviewcard { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+  .reviewcard .head { display:flex; align-items:center; gap:8px; padding:13px 16px; }
+  .reviewcard .head h3 { font-size:15px; font-weight:800; display:flex; gap:8px; align-items:center; color:var(--teal-800); }
+  .reviewcard .rows { padding:4px 16px 12px; display:flex; flex-direction:column; gap:8px; }
+  .reviewcard .row { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
+  .reviewcard .row .k { color:var(--muted); }
+  .reviewcard .row .v { color:var(--ink); font-weight:650; text-align:right; }
+  .reviewcard .row .v.cell { font-family:var(--mono); font-size:12.5px; color:#3d4a55; }
+  .reviewcard .act { display:flex; gap:10px; align-items:center; padding:10px 16px; border-top:1px solid var(--line); }
+  .reviewcard .act .note { font-size:12px; color:var(--muted); margin-left:auto; }
+
+  .ledger {
+    background:var(--surface); border:1px dashed #c9d6d2; border-radius:var(--radius);
+    padding:11px 14px; display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:var(--muted);
+  }
+  .ledger .dot { flex:0 0 auto; color:var(--green); display:flex; align-items:center; }
+  .ledger b { color:var(--ink); }
+  .ledger ul { margin:2px 0 2px 0; padding-left:14px; }
+  .ledger li { font-size:12px; color:var(--muted); }
+
+  .closedcard { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; display:flex; gap:10px; align-items:flex-start; }
+  .closedcard .ic { color:var(--green); flex:0 0 auto; display:flex; align-items:center; }
+  .closedcard b { color:var(--green); font-size:14.5px; }
+  .closedcard .s { display:block; font-size:12.5px; color:var(--muted); margin-top:3px; }
+
+  .switchjobs { margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; }
+  .jobchip {
+    border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:8px 12px;
+    font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--ink); cursor:pointer; text-align:left;
+  }
+  .jobchip small { display:block; color:var(--muted); font-size:11px; }
+  .jobchip:hover { border-color:var(--teal-500); }
+  .jobchip[aria-pressed="true"] { background:rgba(27,150,137,.1); border-color:var(--teal-500); color:var(--teal-700); }
+
+  .notice {
+    margin-top:8px; background:rgba(27,150,137,.07); border:1px solid #cfe0db; border-radius:10px;
+    padding:9px 12px; font-size:12.5px; color:#2f6f62;
+  }
+  .footerbar {
+    border-top:1px solid var(--line); padding:14px 0 8px; max-width:1280px; margin:0 auto;
+    color:var(--faint); font-size:12px; display:flex; gap:14px; flex-wrap:wrap;
+  }
+
+  svg.inline { width:15px; height:15px; fill:currentColor; }
+
+  @media (max-width:980px) {
+    .main { grid-template-columns:1fr; }
+    .context { flex-wrap:wrap; }
+    .dividerv { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="wordmark">
+    <svg class="brandicon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" aria-hidden="true">
+      <rect x="3"  y="14" width="3.6" height="8"/>
+      <rect x="7.6" y="10" width="3.6" height="12"/>
+      <rect x="12.2" y="6"  width="3.6" height="16"/>
+      <rect x="16.8" y="2.4" width="3.6" height="19.2"/>
+      <rect x="21.4" y="7" width="3.6" height="14.6" opacity=".55"/>
+    </svg>
+    Runbook
+    <span class="tagline">Autonomous operations for the physical economy</span>
+  </span>
+  <span class="demo">Synthetic demo</span>
+  <nav class="topnav" aria-label="Console">
+    <a href="#" aria-current="page">Sites</a>
+    <a href="#">Agents</a>
+    <a href="#">Runs</a>
+    <a href="#">Playbooks</a>
+  </nav>
+</header>
+
+<div class="wrap">
+
+  <!-- context strip -->
+  <section class="context" aria-label="Site and job context">
+    <div class="site">
+      <div class="k">Site</div>
+      <div class="v" id="siteName">Joliet Cross-Dock</div>
+      <div class="s" id="siteSub">Midwest DC · Joliet, IL</div>
+    </div>
+    <div class="dividerv"></div>
+    <div class="job">
+      <div class="k">Job</div>
+      <div class="v" id="jobName">RB-4821 · Pickup &amp; delivery scheduling</div>
+      <div class="s" id="jobSub">Wilson Truck Lines · 2 pallets · Joliet, IL → St. Louis, MO</div>
+    </div>
+    <div class="dividerv"></div>
+    <div class="agentbox">
+      <div class="k">Agent</div>
+      <div class="agentname" id="agentName">Scheduling Agent</div>
+      <div style="margin-top:5px;"><span class="pill active" id="agentPill">Active</span></div>
+    </div>
+    <div style="width:14px;flex:0 0 auto;"></div>
+  </section>
+
+  <main class="main">
+
+    <!-- runbook timeline -->
+    <section class="card" aria-label="Runbook steps">
+      <div class="cardhead runbookhead">
+        <h3>Runbook <span class="sub" id="runbookSub">Pickup &amp; delivery scheduling</span></h3>
+        <div class="right">
+          <div class="controls" role="group" aria-label="Playback controls">
+            <button class="ctl" id="btnPause" type="button">Pause</button>
+            <button class="ctl" id="btnRestart" type="button">Restart job</button>
+          </div>
+        </div>
+      </div>
+      <div class="steps" id="stepList"></div>
+    </section>
+
+    <!-- right rail -->
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
+
+      <div class="switchjobs" role="group" aria-label="Switch synthetic job">
+        <button class="jobchip" data-job="joliet" aria-pressed="true">
+          Joliet Cross-Dock
+          <small>Pickup &amp; delivery · in progress</small>
+        </button>
+        <button class="jobchip" data-job="fresno" aria-pressed="false">
+          West Coast HVAC
+          <small>Field service · work order dispatch</small>
+        </button>
+      </div>
+
+      <div id="rightRail"></div>
+
+    </div>
+  </main>
+
+  <div class="notice">
+    Synthetic demo data. Nothing here calls Outlook, a TMS, a carrier line, or any live system.
+    Runs follow an example playbook so you can walk the deploy loop: job → steps → exception → human takeover → resume → close-out.
+  </div>
+</div>
+
+<div class="footerbar">
+  <span>Runbook concept console · built for an Agent PM walkthrough</span>
+  <span>·</span>
+  <span>Outcome ledger is light audit chrome, not an eval scorecard</span>
+</div>
+
+<script>
+"use strict";
+
+/* ============================ data ============================ */
+
+const ICONS = {
+  check: '<svg class="inline" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 12.8 L6 12.8 L8.8 12.8 L10.8 10.8 L13 8 L15.2 4.4 L13.2 8.9 L12.2 10.9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  alert: '<svg class="inline" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6 L14.2 8 L8 14.4 L1.8 8 Z M8 7 L9.4 7.2 L11 8.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  circle: '<svg class="inline" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+};
+
+const TOOLS = {
+  outlook:  { cls:"outlook", label:"Outlook" },
+  tms:      { cls:"tms",     label:"TMS" },
+  call:     { cls:"call",    label:"Call" },
+  email:    { cls:"email",   label:"Email" },
+  erp:      { cls:"erp",     label:"ERP" },
+  thought:  { cls:"thought", label:"Thought" },
+};
+
+const JOBS = {
+  joliet: {
+    siteName:"Joliet Cross-Dock",
+    siteSub:"Midwest DC · Joliet, IL",
+    jobName:"RB-4821 · Pickup &amp; delivery scheduling",
+    jobSub:"Wilson Truck Lines · 2 pallets · Joliet, IL → St. Louis, MO",
+    agent:"Scheduling Agent",
+    runbook:"Pickup &amp; delivery scheduling",
+    pickup:"Wed 13:30",
+    delivery:"Wed 13:30",
+    carrier:"Wilson Truck Lines",
+    exceptionIdx: 5,
+    steps:[
+      { tool:"outlook", t:"Email received", d:"Pickup request RB-4821 from Wilson Truck Lines: 2 pallets, Joliet Cross-Dock to St. Louis consignee, delivery window Wed 16:30." },
+      { tool:"thought", t:"Thought for 2s", d:"New pickup request. Verify facility hours, then book the earliest slot inside the carrier window.", w:"New pickup request. Verify facility hours, then book the earliest slot inside the carrier window." },
+      { tool:"tms", t:"Check scheduling availability", d:"Dock slots open 06:00–20:00. Door 12 free for Wed 13:30." },
+      { tool:"tms", t:"Book pickup slot", d:"Pickup slot Wed 13:30 confirmed at the Joliet dock." },
+      { tool:"call", t:"Call carrier dispatch", d:"Wilson Truck Lines dispatch confirmed the pickup window." },
+      { tool:"outlook", t:"Send delivery appointment", d:"Drafting delivery appointment for Wed 16:30 at the St. Louis consignee.", ex:"Facility hours conflict: the consignee dock closes at 15:00, so 16:30 is outside facility hours." },
+      { tool:"outlook", t:"Send revised delivery appointment", d:"Delivery appointment resent for 13:30 with facility-hours note." },
+      { tool:"call", t:"Call carrier with updated window", d:"Wilson dispatch updated to the 13:30 delivery window." },
+      { tool:"tms", t:"Update TMS delivery record", d:"Delivery window synced to the TMS route record." },
+    ],
+    reviewRows:[
+      { k:"Job", v:"RB-4821" },
+      { k:"Carrier", v:"Wilson Truck Lines" },
+      { k:"Pickup", v:"Wed 13:30 · Door 12" },
+      { k:"Delivery", v:"Wed 13:30 · St. Louis dock" },
+      { k:"Override note", v:"Moved to 13:30 to stay inside facility hours", cell:true },
+    ],
+    closed:"Load RB-4821 closed out. Pickup and delivery confirmed.",
+    ledger:
+      "<ul><li>Pickup confirmed · Wed 13:30</li><li>Delivery confirmed · Wed 13:30</li><li>1 exception handled by human takeover</li><li>Detour research not charged to the job</li></ul>",
+  },
+
+  fresno: {
+    siteName:"West Coast HVAC",
+    siteSub:"Fresno, CA · field service",
+    jobName:"WO-8810 · Work order dispatch",
+    jobSub:"Maple Street Market · RTU fault · commercial HVAC",
+    agent:"Dispatch Agent",
+    runbook:"Emergency work order dispatch",
+    pickup:"—",
+    delivery:"Dispatch ETA 11:40",
+    carrier:"Tech Rivera · Van 14",
+    exceptionIdx: -1,
+    steps:[
+      { tool:"email", t:"Work order received", d:"WO-8810: rooftop unit fault at Maple Street Market, perishables on the line. Priority dispatch requested." },
+      { tool:"thought", t:"Thought for 2s", d:"Match the nearest certified tech to this RTU type, then confirm dispatch before the 11:00 cutoff.", w:"Match the nearest certified tech to this RTU type, then confirm dispatch before the 11:00 cutoff." },
+      { tool:"erp", t:"Check technician availability", d:"Certified RTU techs: Rivera (14 mi) and Chen (22 mi). Van 14 free." },
+      { tool:"call", t:"Call technician", d:"Rivera confirmed: onsite by 11:40." },
+      { tool:"email", t:"Send customer update", d:"Store manager emailed: tech ETA 11:40, ticket WO-8810." },
+      { tool:"erp", t:"Update work order in ERP", d:"WO-8810 status set to Scheduled · Dispatch ETA 11:40." },
+    ],
+    reviewRows:[
+      { k:"Work order", v:"WO-8810" },
+      { k:"Site", v:"Maple Street Market" },
+      { k:"Tech", v:"Rivera · ETA 11:40" },
+      { k:"Customer update", v:"Sent · 10:12" },
+    ],
+    closed:"WO-8810 dispatched. Tech on route, customer updated.",
+    ledger:
+      "<ul><li>Dispatch confirmed · 11:40 ETA</li><li>Customer updated · 10:12</li><li>No exceptions this run</li></ul>",
+  },
+};
+
+/* ============================ state ============================ */
+
+const state = {
+  job: "joliet",
+  running: false,
+  stepIdx: 0,
+  done: [],
+  status: "active",     // active | needs-review | review | closed
+  override: null,
+  timer: null,
+  closed: false,
+  lastWindow: "Wed 13:30",
+  lastNote: "",
+  saved: {},
+};
+
+const STEP_MS = 1500;
+
+function resetJob(jobKey){
+  const job = JOBS[jobKey];
+  state.job = jobKey;
+  state.stepIdx = 0;
+  state.done = job.steps.map(()=>false);
+  state.status = "active";
+  state.override = null;
+  state.closed = false;
+  state.lastWindow = "Wed 13:30";
+  state.lastNote = "";
+  clearTimeout(state.timer);
+  state.running = false;
+}
+
+/* ============================ render ============================ */
+
+function els(){
+  return {
+    siteName:document.getElementById("siteName"),
+    siteSub:document.getElementById("siteSub"),
+    jobName:document.getElementById("jobName"),
+    jobSub:document.getElementById("jobSub"),
+    agentName:document.getElementById("agentName"),
+    agentPill:document.getElementById("agentPill"),
+    runbookSub:document.getElementById("runbookSub"),
+    stepList:document.getElementById("stepList"),
+    rightRail:document.getElementById("rightRail"),
+    btnPause:document.getElementById("btnPause"),
+    btnRestart:document.getElementById("btnRestart"),
+  };
+}
+
+function auditTick(){
+  return '<svg class="inline" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4.6 9.2 L6.4 6.8 L8.2 7.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+}
+
+function render(){
+  const E = els();
+  const job = JOBS[state.job];
+  const steps = job.steps;
+  const n = steps.length;
+
+  E.siteName.innerHTML = job.siteName;
+  E.siteSub.innerHTML = job.siteSub;
+  E.jobName.innerHTML = job.jobName;
+  E.jobSub.innerHTML = job.jobSub;
+  E.agentName.textContent = job.agent;
+  E.runbookSub.innerHTML = job.runbook;
+
+  const pillMap = {
+    active:       ["Active", "active"],
+    "needs-review": ["Needs review", "needs-review"],
+    review:       ["Ready for final review", "needs-review"],
+    closed:       ["Closed out", "closed"],
+  };
+  const pill = pillMap[state.status];
+  E.agentPill.className = "pill " + pill[1];
+  E.agentPill.innerHTML = pill[0];
+
+  E.btnPause.textContent = state.running ? "Pause" : "Resume";
+  E.btnPause.disabled = (state.status === "closed" || state.status === "review");
+
+  /* timeline */
+  let html = "";
+  for (let i=0;i<n;i++){
+    const s = steps[i];
+    const isDone = state.done[i];
+    const isCurrent = (i === state.stepIdx && state.running);
+    const isEx = (i === job.exceptionIdx);
+    const exNow = (isEx && state.status === "needs-review" && state.stepIdx === job.exceptionIdx);
+
+    let nodeCls = "node";
+    let check = "";
+    if (isDone){ nodeCls = "node done"; check = ICONS.check; }
+    else if (isCurrent){ nodeCls = "node running"; }
+    else if (exNow){ nodeCls = "node exception"; }
+
+    let rowCls = "steprow";
+    if (!isDone && !isCurrent && !(exNow)) rowCls += " pending";
+    if (exNow || (isEx && isDone && state.override)) rowCls += " exception-step";
+
+    let meta = '<div class="meta"><span class="chip ' + TOOLS[s.tool].cls + '">' + TOOLS[s.tool].label + '</span>';
+    if (isDone){
+      meta += '<span class="audit">' + auditTick() + ' Step logged</span>';
+    }
+    if (isEx && isDone && state.override){
+      meta += '<span class="override-tag">' + ICONS.check + ' Human override applied</span>';
+    }
+    meta += '</div>';
+
+    let detail = '<div class="d">' + s.d + '</div>';
+    if (s.w && (isCurrent || isDone)){
+      detail += '<div class="thought-detail">' + s.w.replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</div>';
+    }
+    if (isEx && isDone && !state.override){
+      detail += '<div class="dx">' + s.ex + '</div>';
+    }
+
+    html +=
+      '<div class="' + rowCls + '">' +
+        '<div class="rail"><div class="' + nodeCls + '">' + check + '</div>' +
+        (i<n-1 ? '<div class="stick' + (isDone ? " done" : (isCurrent ? " running" : "")) + '"></div>' : '') +
+        '</div>' +
+        '<div class="stepbody"><div class="t">' + s.t + '</div>' + detail + meta + '</div>' +
+      '</div>';
+  }
+  E.stepList.innerHTML = html;
+
+  renderRail();
+
+  document.querySelectorAll(".jobchip").forEach(ch=>{
+    ch.setAttribute("aria-pressed", (ch.dataset.job === state.job) ? "true" : "false");
+  });
+}
+
+/* ============================ rail ============================ */
+
+function livePanelHtml(job, steps){
+  let doneCount = 0;
+  state.done.forEach(d=>{ if(d) doneCount++; });
+  const pct = Math.round(100 * doneCount / steps.length);
+  let now = "Agent preparing the runbook…";
+  if (state.status === "review" || state.status === "closed") now = "All steps complete";
+  else if (state.stepIdx >= 0 && state.stepIdx < steps.length){
+    now = steps[state.stepIdx].t;
+  }
+  const pillCls = (state.running ? "running" : "needs-review");
+  const pillTxt = (state.running ? "Running" : (state.status === "needs-review" ? "Paused at exception" : "Paused"));
+  return (
+    '<div class="card"><div class="cardhead"><h3>Live run</h3>' +
+    '<div class="right"><span class="pill ' + pillCls + '">' + pillTxt + '</span></div></div>' +
+    '<div class="live-body">' +
+      '<div class="now">' + now + '</div>' +
+      '<div class="nowsub">' + job.runbook + ' · run #12 today</div>' +
+      '<div class="progressbar"><div style="width:' + pct + '%"></div></div>' +
+      '<div class="progtext">' + doneCount + ' of ' + steps.length + ' steps complete</div>' +
+    '</div></div>'
+  );
+}
+
+function renderRail(){
+  const E = els();
+  const job = JOBS[state.job];
+  const steps = job.steps;
+  let html = "";
+
+  html += livePanelHtml(job, steps);
+
+  /* exception banner + takeover */
+  if (job.exceptionIdx >= 0 && state.done[job.exceptionIdx] && state.status === "needs-review" && !state.override){
+    const ex = steps[job.exceptionIdx];
+    html +=
+      '<div class="exception-banner">' +
+        '<span class="ic">' + ICONS.alert + '</span>' +
+        '<div class="bdy"><div class="h">Exception · ' + ex.t + '</div>' +
+        '<div class="why">' + ex.ex + '</div>' +
+        '<div class="who">Agent paused before sending. Human takeover required to pick the workaround.</div></div>' +
+      '</div>';
+
+    html +=
+      '<div class="takeover"><div class="head"><h3>' + ICONS.circle + ' Human takeover</h3>' +
+      '<span class="pill needs-review" style="margin-left:auto;">Paused here</span></div>' +
+      '<div class="body">' +
+        '<div class="intro">You are in control of this job. Pick the fix and resume the agent from this step. The agent keeps every completed step and continues from the resume point.</div>' +
+        '<div class="field">' +
+          '<label class="flabel" for="takeoverWindow">Delivery window (facility hours close at 15:00)</label>' +
+          '<select id="takeoverWindow">' +
+            '<option value="Wed 13:30">Move to Wed 13:30 · within facility hours</option>' +
+            '<option value="Thu 09:00">Move to Thu 09:00 · next available</option>' +
+            '<option value="Wed 14:30">Move to Wed 14:30 · last slot before close</option>' +
+          '</select>' +
+          '<div class="hint">Runbook suggestion: 13:30 keeps the load on schedule and inside the consignee dock window.</div>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label class="flabel" for="takeoverNote">Note to the agent (optional)</label>' +
+          '<textarea id="takeoverNote" rows="2" placeholder="Example: consignee manager said morning deliveries preferred"></textarea>' +
+        '</div>' +
+        '<div class="actions">' +
+          '<button class="btn-primary" id="btnResume" type="button">Resume agent</button>' +
+          '<button class="btn-ghost" id="btnMsg" type="button">Message the agent</button>' +
+        '</div>' +
+        '<div class="reviewsnippet"><b>Resume point:</b> step ' + (job.exceptionIdx + 2) + ' of ' + steps.length + ' · "Send revised delivery appointment"</div>' +
+      '</div></div>';
+  }
+
+  /* review card */
+  if (state.status === "review"){
+    const rows = job.reviewRows.map(r=>
+      '<div class="row"><span class="k">' + r.k + '</span><span class="v' + (r.cell ? " cell" : "") + '">' + r.v + '</span></div>'
+    ).join("");
+    html +=
+      '<div class="reviewcard"><div class="head"><h3>Ready for final review</h3>' +
+      '<span class="pill needs-review" style="margin-left:auto;">Needs review</span></div>' +
+      '<div class="rows">' + rows +
+      '<div class="row"><span class="k">Audit</span><span class="v">' + job.steps.length + ' steps logged</span></div>' +
+      '</div>' +
+      '<div class="act">' +
+        '<button class="btn-primary" id="btnApprove" type="button">Approve · close out the load</button>' +
+        '<button class="btn-ghost" id="btnMsg2" type="button">Message the agent</button>' +
+        '<span class="note"></span>' +
+      '</div></div>';
+  }
+
+  /* closed: confirmation + ledger */
+  if (state.status === "closed"){
+    const sub = state.override
+      ? 'Human takeover on the facility-hours exception · agent resumed from step ' + (job.exceptionIdx + 2) + ' · no steps replayed.'
+      : 'All runbook steps completed without interruption.';
+    html +=
+      '<div class="closedcard"><span class="ic">' + ICONS.check + '</span><div><b>' + job.closed + '</b>' +
+      '<span class="s">' + sub + '</span></div></div>';
+
+    html +=
+      '<div class="ledger"><span class="dot">' + ICONS.check + '</span><div><b>Outcome ledger</b> · what this run delivered' + job.ledger + '</div></div>';
+  }
+
+  E.rightRail.innerHTML = html;
+}
+
+/* ============================ engine ============================ */
+
+function finishStep(){
+  const job = JOBS[state.job];
+  const idx = state.stepIdx;
+  if (idx >= job.steps.length) return;
+
+  state.done[idx] = true;
+  state.stepIdx = idx + 1;
+
+  if (idx === job.exceptionIdx){
+    state.status = "needs-review";
+    state.running = false;
+    render();
+    return;
+  }
+
+  if (state.stepIdx >= job.steps.length){
+    state.status = "review";
+    state.running = false;
+    render();
+    return;
+  }
+
+  render();
+  state.timer = setTimeout(finishStep, STEP_MS);
+}
+
+function startOrResume(){
+  const job = JOBS[state.job];
+
+  if (state.status === "needs-review"){
+    /* apply human override, then continue from the resume point */
+    state.override = { window: state.lastWindow, note: state.lastNote };
+    state.status = "active";
+    if (state.lastWindow !== "Wed 13:30"){
+      job.reviewRows[3].v = state.lastWindow + " · St. Louis dock";
+    }
+    job.reviewRows[4].v = (state.lastWindow === "Wed 13:30"
+      ? "Moved to 13:30 to stay inside facility hours"
+      : "Moved to " + state.lastWindow + " per operator decision");
+    if (state.lastNote){
+      job.reviewRows[4].v += " · Note: " + state.lastNote;
+    }
+  }
+
+  if (state.status === "closed") return;
+  if (state.running) return;
+
+  state.running = true;
+
+  if (state.stepIdx >= job.steps.length){
+    state.status = "review";
+    state.running = false;
+    render();
+    return;
+  }
+
+  render();
+  state.timer = setTimeout(finishStep, STEP_MS);
+}
+
+function pauseJob(){
+  clearTimeout(state.timer);
+  state.running = false;
+  render();
+}
+
+function restart(){
+  clearTimeout(state.timer);
+  resetJob(state.job);
+  render();
+  startOrResume();
+}
+
+function switchJob(key){
+  if (key === state.job) return;
+  clearTimeout(state.timer);
+  state.running = false;
+  state.saved[state.job] = {
+    stepIdx: state.stepIdx,
+    done: state.done.slice(),
+    status: state.status,
+    override: state.override,
+    closed: state.closed,
+  };
+
+  state.job = key;
+  const prev = state.saved[key];
+  if (prev){
+    state.stepIdx = prev.stepIdx;
+    state.done = prev.done;
+    state.status = prev.status;
+    state.override = prev.override;
+    state.closed = prev.closed;
+  } else {
+    resetJob(key);
+    render();
+    startOrResume();
+    return;
+  }
+  render();
+}
+
+/* ============================ events ============================ */
+
+document.addEventListener("click", (e)=>{
+  const t = e.target;
+
+  if (t.tagName === "A" && t.getAttribute("href") === "#"){
+    e.preventDefault();
+    return;
+  }
+
+  if (t.id === "btnPause"){
+    if (state.running) pauseJob();
+    else startOrResume();
+    return;
+  }
+  if (t.id === "btnRestart"){ restart(); return; }
+
+  if (t.id === "btnResume"){
+    const sel = document.getElementById("takeoverWindow");
+    const note = document.getElementById("takeoverNote");
+    if (sel) state.lastWindow = sel.value;
+    if (note) state.lastNote = note.value.trim();
+    startOrResume();
+    return;
+  }
+  if (t.id === "btnMsg" || t.id === "btnMsg2"){
+    flashNotice(t.id === "btnMsg2"
+      ? "Message sent to the agent. It will reply in the run activity feed."
+      : "Note sent to the agent. It will reply in the run activity feed.");
+    return;
+  }
+  if (t.id === "btnApprove"){
+    state.status = "closed";
+    state.closed = true;
+    state.running = false;
+    clearTimeout(state.timer);
+    render();
+    return;
+  }
+  if (t.classList && t.classList.contains("jobchip")){
+    switchJob(t.dataset.job);
+  }
+});
+
+function flashNotice(msg){
+  const rail = document.getElementById("rightRail");
+  const d = document.createElement("div");
+  d.className = "notice";
+  d.style.marginTop = "0px";
+  d.textContent = msg;
+  rail.prepend(d);
+  setTimeout(()=>{ d.remove(); }, 3200);
+}
+
+/* ============================ init ============================ */
+
+resetJob("joliet");
+render();
+startOrResume();
+</script>
+</body>
+</html>
