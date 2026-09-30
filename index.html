@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e3a33">
 <meta name="robots" content="noindex, nofollow">
 <title>Runbook · Deploy console</title>
 <style>
@@ -261,10 +262,101 @@
 
   svg.inline { width:15px; height:15px; fill:currentColor; }
 
+  html { -webkit-text-size-adjust:100%; }
   @media (max-width:980px) {
     .main { grid-template-columns:1fr; }
-    .context { flex-wrap:wrap; }
     .dividerv { display:none; }
+    .context { flex-wrap:wrap; gap:12px; }
+    button.ctl { min-height:40px; padding:7px 13px; }
+  }
+
+  /* ---------- phones & small tablets ---------- */
+  @media (max-width:640px) {
+    html,body { overflow-x:hidden; }
+    .topbar {
+      flex-wrap:wrap; padding:10px 14px; gap:10px;
+    }
+    .wordmark {
+      display:inline-flex; flex-wrap:wrap; align-items:center;
+      font-size:19px; gap:6px;
+    }
+    .brandicon { width:22px; height:22px; margin-right:0; }
+    .tagline { font-size:11.5px; color:#b9c8c4; }
+    .topnav a { padding:9px 11px; font-size:13px; border-radius:9px; }
+    .wrap { padding:14px 12px 30px; gap:16px; }
+
+    .context {
+      padding:13px 14px; gap:10px; align-items:flex-start;
+      max-width:100%;
+    }
+    .context .site { width:100%; min-width:0; }
+    .context .job { width:100%; min-width:0; flex:1 1 auto; }
+    .context .agentbox { width:100%; }
+    .context .site .v { font-size:16.5px; }
+    .context .site .s { font-size:12.5px; }
+    .context .job .v { font-size:15px; }
+    .context .job .s { font-size:12.5px; }
+
+    .pill { padding:4px 12px; font-size:12.5px; }
+    .chip { height:22px; padding:2px 9px; font-size:11.5px; }
+
+    .cardhead { padding:12px 14px; flex-wrap:wrap; gap:8px; }
+    .cardhead .right { width:100%; }
+    .runbookhead .controls { width:100%; justify-content:center; }
+    button.ctl { min-height:40px; padding:8px 14px; font-size:13px; }
+
+    .steps { padding:12px 10px 14px; }
+    .steprow { gap:10px; padding:10px 4px; }
+    .stepbody .t { font-size:15px; }
+    .stepbody .d { font-size:13.5px; line-height:1.55; }
+    .stepbody .thought-detail {
+      display:block; max-width:100%; white-space:normal;
+      word-break:break-word; overflow-wrap:anywhere; font-size:13px;
+    }
+    .stepbody .meta { gap:8px; }
+    .stepbody .dx { font-size:12.5px; }
+
+    .live-body { padding:12px 14px; }
+    .live-body .now { font-size:14px; }
+
+    .exception-banner { padding:12px 13px; }
+    .exception-banner .bdy { min-width:0; }
+    .exception-banner .h { font-size:14.5px; }
+    .exception-banner .why { font-size:13.5px; }
+    .exception-banner .who { font-size:12.5px; }
+
+    .takeover .head { padding:11px 13px; }
+    .takeover .body { padding:12px 13px; }
+    .takeover .body .intro { font-size:13.5px; line-height:1.5; }
+    .takeover select, .takeover textarea {
+      font-size:16px; padding:12px 12px; min-height:46px;
+      border-radius:10px;
+    }
+    .takeover .hint { font-size:12.5px; line-height:1.45; }
+    .takeover .actions { flex-wrap:wrap; gap:10px; }
+    .reviewsnippet { font-size:13px; line-height:1.45; }
+
+    .btn-primary, .btn-ghost {
+      min-height:44px; font-size:15px; padding:11px 18px;
+      width:100%; flex:1 1 auto;
+    }
+
+    .reviewcard .head { padding:12px 14px; flex-wrap:wrap; }
+    .reviewcard .rows { padding:4px 14px 12px; }
+    .reviewcard .row { flex-wrap:wrap; gap:8px; min-width:0; }
+    .reviewcard .row .k { min-width:0; }
+    .reviewcard .row .v { min-width:0; text-align:right; }
+    .reviewcard .act { flex-wrap:wrap; gap:10px; }
+
+    .ledger { padding:12px 12px; }
+    .ledger ul { padding-left:12px; }
+    .closedcard { padding:13px 14px; }
+    .closedcard .s { line-height:1.5; }
+
+    .switchjobs { flex-direction:column; align-items:stretch; }
+    .jobchip { padding:11px 14px; font-size:13.5px; min-height:48px; }
+    .notice { padding:11px 13px; font-size:13px; line-height:1.5; }
+    .footerbar { padding:12px 12px 6px; font-size:12px; }
   }
 </style>
 </head>
